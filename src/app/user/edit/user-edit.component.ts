@@ -1,15 +1,14 @@
 import { Component, ElementRef, OnInit, AfterViewChecked, EventEmitter } from '@angular/core';
+import { User } from '../common/user';
 import { FormGroup, Validators, FormBuilder } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser/';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
-
 import { UserService } from '../common/user.service';
+import { AuthService } from '../../auth.service';
 import { FormConstantsService } from '../../_services/form-constants.service';
 import { ImageUploaderService, ImageReaderResponse } from '../../_services/image-uploader.service';
-import { AuthService } from '../../auth.service';
 
-import { User } from '../common/user';
 import { MaterializeAction } from 'angular2-materialize';
 
 declare var Materialize: any;
@@ -22,15 +21,19 @@ declare var Materialize: any;
 
 export class UserEditComponent implements OnInit, AfterViewChecked {
 
-  public countries: any[];
-  public user: User;
-  public selectedUser: User;
   public userForm: FormGroup;
+  public user: User;
+  public countries: any[];
+  public selectedUser: User;
   public formPlaceholder: { [key: string]: any } = {};
   public descMaxLength = 255;
   public states: String[];
   public loadedFile: any;
   public userId;
+  public displayPhone = false;
+  public displayProfile = false;
+  public checkPublish = false;
+  public checkNotify = false;
   private defaultAvatar = '../../../assets/default_image.png';
   public globalActions = new EventEmitter<string|MaterializeAction>();
   modalActions = new EventEmitter<string|MaterializeAction>();
@@ -39,7 +42,6 @@ export class UserEditComponent implements OnInit, AfterViewChecked {
     {value: '2', name: 'option2'},
     {value: '3', name: 'python'}];
   currentUserId: String;
-  authSvc: AuthService;
 
   constructor(
     public fb: FormBuilder,
@@ -67,6 +69,9 @@ export class UserEditComponent implements OnInit, AfterViewChecked {
         .subscribe(
           res => {
           this.user = res;
+          this.avatar = this.user.avatarUrl;
+          this.checkRole(this.user.role);
+          this.checkFlag();
           this.fillForm();
           }, error => console.log(error)
         );
@@ -143,6 +148,24 @@ export class UserEditComponent implements OnInit, AfterViewChecked {
          this.avatar = res.url;
        },
         err => { console.error(err, 'An error occurred'); } );
+  }
+
+  private checkRole(userrole: String): void {
+    if (this.auth.isOrganization()) {
+      this.displayPhone = true;
+    }
+    if (this.auth.isVolunteer()) {
+      this.displayProfile = true;
+    }
+  }
+
+  private checkFlag(): void {
+    if (this.user.publishFlag === 'Y') {
+      this.checkPublish = true;
+    }
+    if (this.user.notifyFlag === 'Y') {
+      this.checkNotify = true;
+    }
   }
 
   onSubmit(updatedData: any, event): void {
